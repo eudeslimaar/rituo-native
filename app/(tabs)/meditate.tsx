@@ -1,9 +1,10 @@
-import { StyleSheet, Text, View } from 'react-native';
+// path: app/meditate.tsx
+import { View, Text, StyleSheet } from 'react-native';
 
-export default function ExploreScreen() {
- return (
+export default function MeditateScreen() {
+  return (
     <View style={styles.container}>
-      <Text style={styles.text}>History & Progress coming!</Text>
+      <Text style={styles.text}>Meditation screen coming soon!</Text>
     </View>
   );
 }

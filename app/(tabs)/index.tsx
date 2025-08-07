@@ -1,75 +1,94 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { createTaskWithLogic, TaskWithLogic } from '../../model/TaskWithLogic';
+import { getTasks, removeTask } from '../../storage/taskStorage';
+import TaskDetailModal from '../components/TaskDetailModal';
+import TaskList from '../components/TaskList';
+import WeekHeader from '../components/WeekHeader';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function IndexScreen() {
+  const [tasks, setTasks] = useState<TaskWithLogic[]>([]);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedTask, setSelectedTask] = useState<TaskWithLogic | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const router = useRouter();
 
-export default function HomeScreen() {
+  const handleCardPress = (task: TaskWithLogic) => {
+    setSelectedTask(task);
+    setShowModal(true);
+  };
+
+  const loadTasks = useCallback(async () => {
+    const storedTasks = await getTasks();
+    const enhanced = storedTasks.map(createTaskWithLogic);
+    setTasks(enhanced);
+  }, []);
+
+  useFocusEffect(useCallback(() => {
+    loadTasks();
+  }, [loadTasks]));
+
+  const filteredTasks = tasks.filter((task) =>
+    task.shouldDisplayOn(selectedDate)
+  );
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <View style={styles.container}>
+      <WeekHeader onDateChange={setSelectedDate} />
+      <TaskList
+        tasks={filteredTasks}
+        onPressItem={handleCardPress}
+      />
+
+      {showModal && selectedTask && (
+        <TaskDetailModal
+          task={selectedTask}
+          visible={showModal}
+          onClose={() => setShowModal(false)}
+          onDelete={async () => {
+            await removeTask(selectedTask.id);
+            setShowModal(false);
+            loadTasks(); // recarrega lista
+          }}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      )}
+
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => router.push('/screens/task-creation')}
+      >
+        <Text style={styles.fabText}>＋</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
+  fab: {
     position: 'absolute',
+    bottom: 24,
+    right: 24,
+    backgroundColor: '#7c3aed',
+    borderRadius: 28,
+    width: 56,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: { width: 2, height: 2 },
+  },
+  fabText: {
+    fontSize: 28,
+    color: '#fff',
+    lineHeight: 28,
   },
 });

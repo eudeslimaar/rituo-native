@@ -1,7 +1,8 @@
-import { StyleSheet, Text, View } from 'react-native';
+// path: app/history.tsx
+import { View, Text, StyleSheet } from 'react-native';
 
-export default function ExploreScreen() {
- return (
+export default function HistoryScreen() {
+  return (
     <View style={styles.container}>
       <Text style={styles.text}>History & Progress coming!</Text>
     </View>
