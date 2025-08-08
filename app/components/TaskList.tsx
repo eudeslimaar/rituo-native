@@ -1,8 +1,7 @@
 // path: app/components/TaskList.tsx
 import React from 'react';
 import { FlatList, Text } from 'react-native';
-import { Task } from '../../model/Task';
-import { TaskWithLogic } from '../../model/TaskWithLogic';
+import { TaskWithLogic } from '../model/TaskWithLogic';
 import TaskCard from './TaskCard';
 
 interface Props {

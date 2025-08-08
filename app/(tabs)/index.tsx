@@ -2,11 +2,11 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { createTaskWithLogic, TaskWithLogic } from '../../model/TaskWithLogic';
-import { getTasks, removeTask } from '../../storage/taskStorage';
 import TaskDetailModal from '../components/TaskDetailModal';
 import TaskList from '../components/TaskList';
 import WeekHeader from '../components/WeekHeader';
+import { createTaskWithLogic, TaskWithLogic } from '../model/TaskWithLogic';
+import { getTasks, removeTask } from '../storage/taskStorage';
 
 export default function IndexScreen() {
   const [tasks, setTasks] = useState<TaskWithLogic[]>([]);
@@ -22,6 +22,7 @@ export default function IndexScreen() {
 
   const loadTasks = useCallback(async () => {
     const storedTasks = await getTasks();
+    console.log(storedTasks);
     const enhanced = storedTasks.map(createTaskWithLogic);
     setTasks(enhanced);
   }, []);
@@ -41,6 +42,7 @@ export default function IndexScreen() {
         tasks={filteredTasks}
         onPressItem={handleCardPress}
       />
+     
 
       {showModal && selectedTask && (
         <TaskDetailModal

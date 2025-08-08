@@ -1,6 +1,14 @@
-// path: app/components/WeekHeader.tsx
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
+const screenWidth = Dimensions.get('window').width;
 
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const months = [
@@ -8,17 +16,14 @@ const months = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-const getWeekDates = (today: Date): Date[] => {
-  const dayOfWeek = today.getDay();
-  const daysFromMonday = (dayOfWeek + 6) % 7;
-  const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - daysFromMonday);
-
-  return Array.from({ length: 7 }, (_, i) => {
-    const date = new Date(startOfWeek);
-    date.setDate(startOfWeek.getDate() + i);
-    return date;
-  });
+const generateDateRange = (startDate: Date, endDate: Date): Date[] => {
+  const dates = [];
+  const current = new Date(startDate);
+  while (current <= endDate) {
+    dates.push(new Date(current));
+    current.setDate(current.getDate() + 1);
+  }
+  return dates;
 };
 
 interface Props {
@@ -27,33 +32,67 @@ interface Props {
 
 const WeekHeader = ({ onDateChange }: Props) => {
   const today = new Date();
-  const weekDates = getWeekDates(today);
+  const scrollRef = useRef<ScrollView>(null);
+
+  const ITEM_WIDTH = 48.3;
+  const SPACING = 10;
+
+  const start = new Date(today);
+  start.setMonth(start.getMonth() - 1);
+  start.setDate(1);
+
+  const end = new Date(today);
+  end.setMonth(end.getMonth() + 2);
+  end.setDate(0);
+
+  const allDates = useMemo(() => generateDateRange(start, end), []);
   const [selectedDate, setSelectedDate] = useState<Date>(today);
+
+  // 🔁 Centraliza o índice informado
+  const scrollToIndex = (index: number, animated: boolean = true) => {
+    const offset =
+      index * (ITEM_WIDTH + SPACING) - screenWidth / 2 + ITEM_WIDTH / 2;
+    scrollRef.current?.scrollTo({ x: offset, animated });
+  };
 
   useEffect(() => {
     if (onDateChange) onDateChange(selectedDate);
   }, [selectedDate]);
 
-  const currentMonth = months[selectedDate.getMonth()];
-  const currentDay = selectedDate.getDate();
+  useEffect(() => {
+    const index = allDates.findIndex(
+      (date) => date.toDateString() === today.toDateString()
+    );
+    if (index >= 0) {
+      setTimeout(() => scrollToIndex(index, false), 100);
+    }
+  }, []);
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
         {selectedDate.toDateString() === today.toDateString()
           ? 'Today'
-          : `${currentDay} ${currentMonth}`}
+          : `${months[selectedDate.getMonth()].slice(0, 3)} ${selectedDate.getDate()}, ${selectedDate.getFullYear()}`}
       </Text>
 
-      <View style={styles.row}>
-        {weekDates.map((date) => {
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {allDates.map((date, index) => {
           const isSelected = date.toDateString() === selectedDate.toDateString();
           const isOtherMonth = date.getMonth() !== today.getMonth();
 
           return (
             <TouchableOpacity
               key={date.toDateString()}
-              onPress={() => setSelectedDate(date)}
+              onPress={() => {
+                setSelectedDate(date);
+                scrollToIndex(index); // ✅ centraliza suavemente
+              }}
               style={[
                 styles.dayContainer,
                 isSelected && styles.selectedDayContainer,
@@ -80,46 +119,36 @@ const WeekHeader = ({ onDateChange }: Props) => {
             </TouchableOpacity>
           );
         })}
-      </View>
+      </ScrollView>
     </View>
   );
 };
 
-// const styles = StyleSheet.create({
-//   container: { marginTop: 50, alignItems: 'center' },
-//   title: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
-//   row: { flexDirection: 'row', gap: 12 },
-//   dayContainer: { alignItems: 'center', padding: 10, borderRadius: 16 },
-//   selectedDayContainer: { backgroundColor: '#d8b4fe' },
-//   weekDayText: { fontSize: 14, color: '#666' },
-//   dayNumber: { fontSize: 18, color: '#888', fontWeight: '500' },
-//   selectedText: { color: '#000', fontWeight: 'bold' },
-//   outsideMonthText: { opacity: 0.4 },
-// });
-
 const styles = StyleSheet.create({
   container: {
     marginTop: 50,
-    alignItems: 'center',
-    paddingBottom: 5, // ✅ padding inferior
+    paddingBottom: 10,
   },
   title: {
+    textAlign: 'center',
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16,
   },
-  row: {
+  scrollContent: {
+    paddingHorizontal: 12,
     flexDirection: 'row',
-    gap: 12,
   },
   dayContainer: {
+    width: 48,
     alignItems: 'center',
-    padding: 14,
+    paddingVertical: 14,
     borderRadius: 16,
-    backgroundColor: '#f0f0f0', // ✅ fundo cinza claro
+    backgroundColor: '#f0f0f0',
+    marginRight: 10,
   },
   selectedDayContainer: {
-    backgroundColor: '#000', // ✅ fundo preto
+    backgroundColor: '#000',
   },
   weekDayText: {
     fontSize: 14,
@@ -131,13 +160,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   selectedText: {
-    color: '#fff', // ✅ texto branco quando selecionado
+    color: '#fff',
     fontWeight: 'bold',
   },
   outsideMonthText: {
     opacity: 0.4,
   },
 });
-
 
 export default WeekHeader;

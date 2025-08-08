@@ -13,13 +13,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { RepeatType, Task } from '../../model/Task';
-import { saveTask } from '../../storage/taskStorage';
-import { generateId } from '../../utils/generateId';
+import { v4 as uuidv4 } from 'uuid';
 import ColorPicker from '../components/ColorPicker';
 import EmojiPicker from '../components/EmojiPicker';
 import MiniModalPicker from '../components/MiniModalPicker';
 import MultiSelectModalPicker from '../components/MultiSelectModalPicker';
+import { RepeatType, Task } from '../model/Task';
+import { saveTask } from '../storage/taskStorage';
 
 export default function TaskCreation() {
   const router = useRouter();
@@ -52,7 +52,7 @@ export default function TaskCreation() {
     }
 
     const task: Task = {
-      id: generateId(),
+      id: uuidv4(),
       name,
       startDate: format(startDate, 'yyyy-MM-dd'),
       startTime,

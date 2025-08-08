@@ -9,7 +9,7 @@ import {
     Text,
     View,
 } from 'react-native';
-import { Task } from '../../model/Task';
+import { Task } from '../model/Task';
 
 interface Props {
     task: Task | null;
